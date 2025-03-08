@@ -1,0 +1,15 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# cli
+clap = { version = "4", features = ["derive"] }
+# logging
+log = "0.4"
+env_logger = "0.11"
+# autominion framework
+agent-api = { path = "framework/libs/agent-api" }
+git-proxy = { path = "framework/libs/git-proxy" }
+llm-proxy = { path = "framework/libs/llm-proxy" }
