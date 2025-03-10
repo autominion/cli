@@ -30,7 +30,7 @@ pub struct Context {
 /// Start a temporary web server for the OpenRouter auth flow.
 pub async fn login_flow(config: Config) -> std::io::Result<()> {
     let host = "127.0.0.1";
-    let port = 8080;
+    let port = 3000;
     let bind_addr = format!("{}:{}", host, port);
     let web_base_url = Url::parse(&format!("http://{}", bind_addr)).unwrap();
 
