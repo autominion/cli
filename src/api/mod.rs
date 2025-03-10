@@ -12,9 +12,15 @@ mod chat;
 mod git;
 mod probes;
 
-pub async fn run_server(listener: TcpListener, ctx: Context) -> anyhow::Result<()> {
+#[derive(Debug, PartialEq)]
+pub enum TaskOutcome {
+    Completed,
+    Failure,
+}
+
+pub async fn run_server(listener: TcpListener, ctx: Context) -> anyhow::Result<TaskOutcome> {
     let ctx = web::Data::new(ctx);
-    let (shutdown_tx, shutdown_rx) = oneshot::channel::<()>();
+    let (shutdown_tx, shutdown_rx) = oneshot::channel::<TaskOutcome>();
     let shutdown_tx = web::Data::new(Mutex::new(Some(shutdown_tx)));
 
     let server = HttpServer::new(move || {
@@ -47,8 +53,8 @@ pub async fn run_server(listener: TcpListener, ctx: Context) -> anyhow::Result<(
         .run();
 
     tokio::select! {
-        res = server => res.map_err(|e| anyhow::anyhow!(e)),
-        _ = shutdown_rx => Ok(()),
+        res = server => res.map_err(|e| anyhow::anyhow!(e)).map(|()| TaskOutcome::Failure),
+        outcome = shutdown_rx => outcome.map_err(|e| anyhow::anyhow!(e)),
     }
 }
 

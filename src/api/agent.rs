@@ -4,6 +4,7 @@ use tokio::sync::{oneshot, Mutex};
 
 use agent_api::types::task::*;
 
+use crate::api::TaskOutcome;
 use crate::context::Context;
 
 pub fn scope() -> Scope {
@@ -30,7 +31,7 @@ pub async fn task_info(ctx: web::Data<Context>) -> HttpResponse {
 #[post("/task/complete")]
 pub async fn task_complete(
     body: web::Json<TaskComplete>,
-    shutdown_tx: web::Data<Mutex<Option<oneshot::Sender<()>>>>,
+    shutdown_tx: web::Data<Mutex<Option<oneshot::Sender<TaskOutcome>>>>,
 ) -> HttpResponse {
     let body = body.into_inner();
     println!("Task completed");
@@ -41,7 +42,8 @@ pub async fn task_complete(
         .await
         .take()
         .expect("Failed to acquire lock for shutdown signal");
-    tx.send(()).expect("Failed to send shutdown signal");
+    tx.send(TaskOutcome::Completed)
+        .expect("Failed to send shutdown signal");
 
     HttpResponse::Ok().finish()
 }
@@ -49,7 +51,7 @@ pub async fn task_complete(
 #[post("/task/fail")]
 pub async fn task_fail(
     body: web::Json<TaskFailure>,
-    shutdown_tx: web::Data<Mutex<Option<oneshot::Sender<()>>>>,
+    shutdown_tx: web::Data<Mutex<Option<oneshot::Sender<TaskOutcome>>>>,
 ) -> HttpResponse {
     println!("Task failed");
     println!("{}", body.description);
@@ -59,7 +61,8 @@ pub async fn task_fail(
         .await
         .take()
         .expect("Failed to acquire lock for shutdown signal");
-    tx.send(()).expect("Failed to send shutdown signal");
+    tx.send(TaskOutcome::Failure)
+        .expect("Failed to send shutdown signal");
 
     HttpResponse::Ok().finish()
 }

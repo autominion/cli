@@ -1,16 +1,18 @@
 use std::path::Path;
 
+use anyhow::anyhow;
 use url::Url;
 use uuid::Uuid;
 
 use crate::{
+    api::TaskOutcome,
     context::{self, Context},
     runtime::ContainerConfig,
 };
 
 const AGENT_CONTAINER_IMAGE: &str = "ghcr.io/autominion/minion:x86-64-latest";
 const TASK_DESCRIPTION: &str =
-    "This is a test task. Don't do anything else, just use the end-task action immediately to mark the task as complete";
+    "Add a nice pun to the README.md. Afterwards just use the end-task action immediately to mark the task as complete";
 
 pub async fn run<P: AsRef<Path>>(openrouter_key: String, path: &P) -> anyhow::Result<()> {
     let rt = crate::runtime::LocalDockerRuntime::connect()?;
@@ -23,11 +25,13 @@ pub async fn run<P: AsRef<Path>>(openrouter_key: String, path: &P) -> anyhow::Re
     ))
     .expect("Failed to parse URL");
     let minion_api_base_url = format!("http://host.docker.internal:{}/api/", agent_api_port);
-    let git_branch = Uuid::now_v7().to_string();
+    let fork_branch = Uuid::now_v7().to_string();
     let agent_api_key = context::random_key();
     let host_address = format!("http://{}:{}", agent_api_host, agent_api_port);
 
-    create_git_branch(path, &git_branch)?;
+    let base_branch = current_branch_name(path)?;
+
+    create_git_branch(path, &fork_branch)?;
 
     let ctx = Context {
         openrouter_key,
@@ -36,7 +40,7 @@ pub async fn run<P: AsRef<Path>>(openrouter_key: String, path: &P) -> anyhow::Re
         git_user_name: "minion[bot]".to_owned(),
         git_user_email: "minion@localhost".to_owned(),
         git_repo_url,
-        git_branch,
+        git_branch: fork_branch.clone(),
         git_repo_path: path.as_ref().to_path_buf(),
     };
 
@@ -55,14 +59,27 @@ pub async fn run<P: AsRef<Path>>(openrouter_key: String, path: &P) -> anyhow::Re
     // Wait for the server to be ready by polling the /ready endpoint
     crate::api::wait_until_ready(&host_address).await?;
 
-    tokio::select! {
-        res = server => {
-            res.map_err(|e| anyhow::anyhow!(e))?.map_err(|e| anyhow::anyhow!(e))
+    let (task_outcome, _) = tokio::try_join!(
+        async {
+            server
+                .await
+                .map_err(|e| anyhow!(e))?
+                .map_err(|e| anyhow!(e))
+        },
+        async {
+            rt.run_container(container_config)
+                .await
+                .map_err(|e| anyhow!(e))
         }
-        res = rt.run_container(container_config) => {
-            res.map_err(|e| anyhow::anyhow!(e))
-        }
+    )?;
+
+    if task_outcome == TaskOutcome::Failure {
+        return Ok(());
     }
+
+    squash_merge_branch(path, &base_branch, &fork_branch)?;
+
+    Ok(())
 }
 
 /// Create a new git branch from the current HEAD.
@@ -75,4 +92,71 @@ fn create_git_branch<P: AsRef<Path>>(path: P, branch_name: &str) -> anyhow::Resu
     repo.branch(branch_name, &commit, false)?;
 
     Ok(())
+}
+
+/// Add the changes from the fork branch to the base branch, leaving the changes
+/// unstaged on the base branch.
+fn squash_merge_branch<P: AsRef<Path>>(path: P, base: &str, fork: &str) -> anyhow::Result<()> {
+    let repo = git2::Repository::open(path)?;
+
+    // Ensure the working directory is clean.
+    let mut status_opts = git2::StatusOptions::new();
+    status_opts.include_untracked(false);
+    let statuses = repo.statuses(Some(&mut status_opts))?;
+    if statuses.iter().any(|entry| {
+        let s = entry.status();
+        s.contains(git2::Status::WT_NEW)
+            || s.contains(git2::Status::WT_MODIFIED)
+            || s.contains(git2::Status::WT_DELETED)
+            || s.contains(git2::Status::WT_RENAMED)
+            || s.contains(git2::Status::WT_TYPECHANGE)
+    }) {
+        return Err(anyhow!("Working directory has unstaged changes; aborting."));
+    }
+
+    // Verify the current branch is the base branch. If not, check it out.
+    let head = repo.head()?;
+    let head_name = head
+        .shorthand()
+        .ok_or_else(|| anyhow!("Cannot determine current branch name"))?;
+    if head_name != base {
+        repo.set_head(&format!("refs/heads/{}", base))?;
+        repo.checkout_head(None)?;
+    }
+
+    let head = repo.head()?;
+    let base_commit = head.peel_to_commit()?;
+
+    let fork_branch = repo.find_branch(fork, git2::BranchType::Local)?;
+    let fork_commit = fork_branch.get().peel_to_commit()?;
+
+    // Compute the merge base between the base and fork commits.
+    let merge_base_oid = repo.merge_base(base_commit.id(), fork_commit.id())?;
+    let merge_base_commit = repo.find_commit(merge_base_oid)?;
+    let base_tree = merge_base_commit.tree()?;
+
+    // Compute the diff from the merge base to the fork commit.
+    let fork_tree = fork_commit.tree()?;
+    let diff = repo.diff_tree_to_tree(Some(&base_tree), Some(&fork_tree), None)?;
+
+    // Apply the diff to the working directory (squash merge),
+    // leaving the changes unstaged on the base branch.
+    let mut apply_opts = git2::ApplyOptions::new();
+    repo.apply(&diff, git2::ApplyLocation::WorkDir, Some(&mut apply_opts))
+        .map_err(|_| anyhow!("Merge conflict encountered; aborting."))?;
+
+    Ok(())
+}
+
+fn current_branch_name<P: AsRef<Path>>(path: P) -> anyhow::Result<String> {
+    let repo = git2::Repository::open(path)?;
+
+    let head = repo.head()?;
+    if !head.is_branch() {
+        return Err(anyhow!("HEAD is not pointing to a branch"));
+    }
+    let branch_name = head
+        .shorthand()
+        .ok_or_else(|| anyhow!("Cannot determine current branch name"))?;
+    Ok(branch_name.to_string())
 }
