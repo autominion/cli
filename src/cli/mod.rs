@@ -3,13 +3,18 @@ use clap::{Parser, Subcommand};
 use crate::config::Config;
 use crate::openrouter;
 
+mod editor;
 mod run;
 
 #[derive(Subcommand)]
 enum Command {
     /// Run a task
     #[clap(name = "run", alias = "")]
-    Run,
+    Run {
+        /// Task description
+        #[clap(short = 'm')]
+        message: Option<String>,
+    },
     /// Login using OpenRouter
     Login,
 }
@@ -45,8 +50,8 @@ pub fn exec() {
 
     builder.init();
 
-    match cli.command.unwrap_or(Command::Run) {
-        Command::Run => {
+    match cli.command.unwrap_or(Command::Run { message: None }) {
+        Command::Run { message } => {
             let config = Config::load_or_create().expect("Failed to load config");
             let Some(openrouter_key) = config.openrouter_key else {
                 eprintln!("OpenRouter API key is not set.");
@@ -54,12 +59,24 @@ pub fn exec() {
                 std::process::exit(1);
             };
 
+            let task_description = if let Some(msg) = message {
+                msg
+            } else {
+                read_task_from_editor()
+            };
+
+            println!("{}", task_description);
+            println!();
+
+            println!("Working on the task.");
+
             tokio::runtime::Runtime::new()
                 .expect("Failed to create runtime")
                 .block_on(async {
                     run::run(
                         openrouter_key,
                         &std::env::current_dir().expect("Failed to get current dir"),
+                        task_description,
                     )
                     .await
                     .expect("Failed to run task");
@@ -76,4 +93,33 @@ pub fn exec() {
                 });
         }
     }
+}
+
+fn read_task_from_editor() -> String {
+    let initial_message =
+        "\n\n# Please describe your task. Lines starting with '#' will be ignored.";
+    let edited = editor::Editor::new()
+        .edit(initial_message)
+        .unwrap_or_else(|err| {
+            eprintln!("Failed to open editor: {}", err);
+            std::process::exit(1);
+        });
+
+    let edited = edited
+        .map(|text| {
+            text.lines()
+                .filter(|line| !line.trim_start().starts_with('#'))
+                .collect::<Vec<_>>()
+                .join("\n")
+        })
+        .expect("Failed to read from editor");
+
+    let trimmed = edited.trim();
+
+    if trimmed.is_empty() {
+        eprintln!("No input received.");
+        std::process::exit(1);
+    }
+
+    trimmed.to_owned()
 }

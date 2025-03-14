@@ -6,6 +6,9 @@ edition = "2021"
 [dependencies]
 # cli
 clap = { version = "4", features = ["derive"] }
+tempfile = "3"
+shlex = "1"
+which = "7"
 # logging
 log = "0.4"
 env_logger = "0.11"

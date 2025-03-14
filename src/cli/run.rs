@@ -11,10 +11,12 @@ use crate::{
 };
 
 const AGENT_CONTAINER_IMAGE: &str = "ghcr.io/autominion/minion:x86-64-latest";
-const TASK_DESCRIPTION: &str =
-    "Add a nice pun to the README.md. Afterwards just use the end-task action immediately to mark the task as complete";
 
-pub async fn run<P: AsRef<Path>>(openrouter_key: String, path: &P) -> anyhow::Result<()> {
+pub async fn run<P: AsRef<Path>>(
+    openrouter_key: String,
+    path: &P,
+    task_description: String,
+) -> anyhow::Result<()> {
     let rt = crate::runtime::LocalDockerRuntime::connect()?;
     let agent_api_host = rt.bridge_network_ip().await?;
     let listener = crate::util::listen_to_free_port(&agent_api_host);
@@ -36,7 +38,7 @@ pub async fn run<P: AsRef<Path>>(openrouter_key: String, path: &P) -> anyhow::Re
     let ctx = Context {
         openrouter_key,
         agent_api_key: agent_api_key.clone(),
-        task_description: TASK_DESCRIPTION.to_owned(),
+        task_description,
         git_user_name: "minion[bot]".to_owned(),
         git_user_email: "minion@localhost".to_owned(),
         git_repo_url,
