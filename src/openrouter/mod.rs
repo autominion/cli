@@ -28,7 +28,7 @@ pub struct Context {
 }
 
 /// Start a temporary web server for the OpenRouter auth flow.
-pub async fn login_flow(config: Config) -> std::io::Result<()> {
+pub async fn login_flow(config: Config) -> anyhow::Result<()> {
     let host = "127.0.0.1";
     let port = 3000;
     let bind_addr = format!("{}:{}", host, port);
@@ -131,6 +131,10 @@ async fn openrouter_auth_code(
     // Update the configuration with the obtained key and save it.
     let mut config = context.config.clone();
     config.openrouter_key = Some(key);
+    if config.llm_provider.is_none() {
+        println!("OpenRouter is now your default LLM provider.");
+        config.llm_provider = Some(crate::config::LLMProvider::OpenRouter);
+    }
     if let Err(err) = config.save() {
         return HttpResponse::InternalServerError().body(format!("Failed to save config: {}", err));
     }

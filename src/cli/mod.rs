@@ -1,7 +1,7 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
-use crate::config::Config;
-use crate::openrouter;
+use crate::config::{Config, LLMProvider};
+use crate::{groq, openrouter};
 
 mod editor;
 mod run;
@@ -15,8 +15,11 @@ enum Command {
         #[clap(short = 'm')]
         message: Option<String>,
     },
-    /// Login using OpenRouter
-    Login,
+    /// Login using one of the supported LLM providers
+    Login {
+        #[clap(value_enum)]
+        llm_provider: LLMProvider,
+    },
 }
 
 #[derive(Parser)]
@@ -53,9 +56,18 @@ pub fn exec() {
     match cli.command.unwrap_or(Command::Run { message: None }) {
         Command::Run { message } => {
             let config = Config::load_or_create().expect("Failed to load config");
-            let Some(openrouter_key) = config.openrouter_key else {
-                eprintln!("OpenRouter API key is not set.");
-                eprintln!("Run `minion login` to authenticate with OpenRouter.");
+            let Some(llm_provider_details) = config.llm_provider_details() else {
+                eprintln!("You currently don't have a LLM API key configured.");
+                eprintln!("Run `minion login` to authenticate with a supported provider.");
+                eprintln!(
+                    "Supported providers: {}",
+                    LLMProvider::value_variants()
+                        .iter()
+                        .map(|p| p.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
+                eprintln!("If your LLM provider is not listed, please contribute!");
                 std::process::exit(1);
             };
 
@@ -74,7 +86,7 @@ pub fn exec() {
                 .expect("Failed to create runtime")
                 .block_on(async {
                     run::run(
-                        openrouter_key,
+                        llm_provider_details,
                         &std::env::current_dir().expect("Failed to get current dir"),
                         task_description,
                     )
@@ -82,14 +94,21 @@ pub fn exec() {
                     .expect("Failed to run task");
                 });
         }
-        Command::Login => {
+        Command::Login {
+            llm_provider: provider,
+        } => {
             tokio::runtime::Runtime::new()
                 .expect("Failed to create runtime")
                 .block_on(async {
                     let config = Config::load_or_create().expect("Failed to load config");
-                    openrouter::login_flow(config)
-                        .await
-                        .expect("Failed to start login flow");
+                    match provider {
+                        LLMProvider::OpenRouter => openrouter::login_flow(config)
+                            .await
+                            .expect("Failed to start login flow"),
+                        LLMProvider::Groq => groq::login_flow(config)
+                            .await
+                            .expect("Failed to start login flow"),
+                    }
                 });
         }
     }

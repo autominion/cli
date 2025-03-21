@@ -1,9 +1,11 @@
 use rand::{distr::Alphanumeric, Rng};
 use url::Url;
 
+use crate::config::LLMProviderDetails;
+
 pub struct Context {
-    /// The user's OpenRouter API key.
-    pub openrouter_key: String,
+    /// LLM API configuration and secrets.
+    pub llm_provider_details: LLMProviderDetails,
     /// Randomly generated key supplied to the agent.
     pub agent_api_key: String,
     /// The user's task description.
