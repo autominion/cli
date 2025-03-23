@@ -18,7 +18,7 @@ Run compatible agents from the command line.
   cargo install
   ```
   The binary `minion` gets installed to `~/.cargo/bin/minion`; make sure that this directory is in your `$PATH`.
-- Login to one of the supported LLM provides:
+- Login to one of the supported LLM providers:
   ```console
   minion login --help
   ```
