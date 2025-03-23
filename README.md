@@ -26,7 +26,7 @@ Run compatible agents from the command line.
   ```console
   minion run
   ```
-  This will start the [default agent](https://github.com/autominion/minion) and provide it access to the git repository in the current directory.
+  This will start the [default agent](https://github.com/autominion/default-minion) and provide it access to the git repository in the current directory.
   Note that it will only have access to content checked into git.
   Unstaged or ignored files (which may contain secrets) will deliberately **not** be accessible to the agent.
   Use `minion --help` and `minion run --help` for more information on CLI usage.
