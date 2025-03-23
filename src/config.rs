@@ -17,19 +17,28 @@ static GROQ_CHAT_COMPLETIONS_URL: Lazy<Url> = Lazy::new(|| {
         .expect("Failed to parse Groq chat completions URL")
 });
 
+static GEMINI_CHAT_COMPLETIONS_URL: Lazy<Url> = Lazy::new(|| {
+    Url::parse("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions")
+        .expect("Failed to parse Gemini chat completions URL")
+});
+
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct Config {
     pub llm_provider: Option<LLMProvider>,
     pub openrouter_key: Option<String>,
     pub groq_key: Option<String>,
+    pub google_gemini_key: Option<String>,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug, Deserialize, Serialize)]
 pub enum LLMProvider {
     #[serde(rename = "openrouter")]
+    #[clap(name = "openrouter")]
     OpenRouter,
     #[serde(rename = "groq")]
     Groq,
+    #[serde(rename = "google-gemini")]
+    GoogleGemini,
 }
 
 impl fmt::Display for LLMProvider {
@@ -37,6 +46,7 @@ impl fmt::Display for LLMProvider {
         match self {
             LLMProvider::OpenRouter => write!(f, "OpenRouter"),
             LLMProvider::Groq => write!(f, "Groq"),
+            LLMProvider::GoogleGemini => write!(f, "Google Gemini"),
         }
     }
 }
@@ -90,6 +100,14 @@ impl Config {
                 api_chat_completions_endpoint: GROQ_CHAT_COMPLETIONS_URL.clone(),
                 api_key: key.clone(),
             }),
+            Some(LLMProvider::GoogleGemini) => {
+                self.google_gemini_key
+                    .as_ref()
+                    .map(|key| LLMProviderDetails {
+                        api_chat_completions_endpoint: GEMINI_CHAT_COMPLETIONS_URL.clone(),
+                        api_key: key.clone(),
+                    })
+            }
             None => None,
         }
     }

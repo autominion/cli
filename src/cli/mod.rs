@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand, ValueEnum};
 
 use crate::config::{Config, LLMProvider};
-use crate::{groq, openrouter};
+use crate::{gemini, groq, openrouter};
 
 mod editor;
 mod run;
@@ -106,6 +106,9 @@ pub fn exec() {
                             .await
                             .expect("Failed to start login flow"),
                         LLMProvider::Groq => groq::login_flow(config)
+                            .await
+                            .expect("Failed to start login flow"),
+                        LLMProvider::GoogleGemini => gemini::login_flow(config)
                             .await
                             .expect("Failed to start login flow"),
                     }
