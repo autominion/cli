@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand, ValueEnum};
 
 use crate::config::{Config, LLMProvider};
@@ -8,12 +10,15 @@ mod run;
 
 #[derive(Subcommand)]
 enum Command {
-    /// Run a task
+    /// Run a task in the current directory
     #[clap(name = "run", alias = "")]
     Run {
         /// Task description
         #[clap(short = 'm')]
         message: Option<String>,
+        /// Use the Containerfile located at the specified path
+        #[clap(long)]
+        containerfile: Option<PathBuf>,
     },
     /// Login using one of the supported LLM providers
     Login {
@@ -53,8 +58,14 @@ pub fn exec() {
 
     builder.init();
 
-    match cli.command.unwrap_or(Command::Run { message: None }) {
-        Command::Run { message } => {
+    match cli.command.unwrap_or(Command::Run {
+        message: None,
+        containerfile: None,
+    }) {
+        Command::Run {
+            message,
+            containerfile,
+        } => {
             let config = Config::load_or_create().expect("Failed to load config");
             let Some(llm_provider_details) = config.llm_provider_details() else {
                 eprintln!("You currently don't have a LLM API key configured.");
@@ -87,6 +98,7 @@ pub fn exec() {
                 .block_on(async {
                     run::run(
                         llm_provider_details,
+                        &containerfile,
                         &std::env::current_dir().expect("Failed to get current dir"),
                         task_description,
                     )

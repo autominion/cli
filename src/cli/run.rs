@@ -15,6 +15,7 @@ const AGENT_CONTAINER_IMAGE: &str = "ghcr.io/autominion/minion:x86-64-latest";
 
 pub async fn run<P: AsRef<Path>>(
     llm_provider_details: LLMProviderDetails,
+    containerfile: &Option<P>,
     path: &P,
     task_description: String,
 ) -> anyhow::Result<()> {
@@ -47,15 +48,20 @@ pub async fn run<P: AsRef<Path>>(
         git_repo_path: path.as_ref().to_path_buf(),
     };
 
+    let image = if let Some(containerfile) = containerfile {
+        rt.build_container_image(containerfile).await?
+    } else {
+        rt.pull_container_image(AGENT_CONTAINER_IMAGE).await?;
+        AGENT_CONTAINER_IMAGE.to_owned()
+    };
+
     let container_config = ContainerConfig {
-        image: AGENT_CONTAINER_IMAGE.to_owned(),
+        image,
         env_vars: vec![
             ("MINION_API_BASE_URL".to_owned(), minion_api_base_url),
             ("MINION_API_TOKEN".to_owned(), agent_api_key),
         ],
     };
-
-    rt.pull_container_image(&container_config.image).await?;
 
     let server = tokio::spawn(crate::api::run_server(listener, ctx));
 
