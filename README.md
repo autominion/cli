@@ -11,7 +11,7 @@ Run compatible agents from the command line.
 - Install a Rust toolchain using [rustup.rs](https://rustup.rs/).
 - Clone the repository on your machine:
   ```console
-  git clone https://github.com/autominion/cli
+  git clone --recurse-submodules https://github.com/autominion/cli
   ```
 - To locally install the `minion` executable, run:
   ```console
