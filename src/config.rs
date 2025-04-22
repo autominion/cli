@@ -22,12 +22,18 @@ static GEMINI_CHAT_COMPLETIONS_URL: Lazy<Url> = Lazy::new(|| {
         .expect("Failed to parse Gemini chat completions URL")
 });
 
+static COHERE_CHAT_COMPLETIONS_URL: Lazy<Url> = Lazy::new(|| {
+    Url::parse("https://api.cohere.ai/compatibility/v1/chat/completions")
+        .expect("Failed to parse Cohere chat completions URL")
+});
+
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct Config {
     pub llm_provider: Option<LLMProvider>,
     pub openrouter_key: Option<String>,
     pub groq_key: Option<String>,
     pub google_gemini_key: Option<String>,
+    pub cohere_key: Option<String>,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug, Deserialize, Serialize)]
@@ -39,6 +45,8 @@ pub enum LLMProvider {
     Groq,
     #[serde(rename = "google-gemini")]
     GoogleGemini,
+    #[serde(rename = "cohere")]
+    Cohere,
 }
 
 impl fmt::Display for LLMProvider {
@@ -47,6 +55,7 @@ impl fmt::Display for LLMProvider {
             LLMProvider::OpenRouter => write!(f, "OpenRouter"),
             LLMProvider::Groq => write!(f, "Groq"),
             LLMProvider::GoogleGemini => write!(f, "Google Gemini"),
+            LLMProvider::Cohere => write!(f, "Cohere"),
         }
     }
 }
@@ -108,6 +117,10 @@ impl Config {
                         api_key: key.clone(),
                     })
             }
+            Some(LLMProvider::Cohere) => self.cohere_key.as_ref().map(|key| LLMProviderDetails {
+                api_chat_completions_endpoint: COHERE_CHAT_COMPLETIONS_URL.clone(),
+                api_key: key.clone(),
+            }),
             None => None,
         }
     }

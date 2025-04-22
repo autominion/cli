@@ -1,5 +1,6 @@
 mod api;
 mod cli;
+mod cohere;
 mod config;
 mod context;
 mod gemini;
