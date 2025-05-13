@@ -16,6 +16,7 @@ const AGENT_CONTAINER_IMAGE: &str = "ghcr.io/autominion/default-minion:x86-64-la
 pub async fn run<P: AsRef<Path>>(
     llm_provider_details: LLMProviderDetails,
     containerfile: &Option<P>,
+    nested: bool,
     path: &P,
     task_description: String,
 ) -> anyhow::Result<()> {
@@ -61,6 +62,7 @@ pub async fn run<P: AsRef<Path>>(
             ("MINION_API_BASE_URL".to_owned(), minion_api_base_url),
             ("MINION_API_TOKEN".to_owned(), agent_api_key),
         ],
+        nested,
     };
 
     let server = tokio::spawn(crate::api::run_server(listener, ctx));

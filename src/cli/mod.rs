@@ -19,6 +19,9 @@ enum Command {
         /// Use the Containerfile located at the specified path
         #[clap(long)]
         containerfile: Option<PathBuf>,
+        /// Expose a Docker socket to the container
+        #[clap(long)]
+        nested: bool,
     },
     /// Login using one of the supported LLM providers
     Login {
@@ -61,10 +64,12 @@ pub fn exec() {
     match cli.command.unwrap_or(Command::Run {
         message: None,
         containerfile: None,
+        nested: false,
     }) {
         Command::Run {
             message,
             containerfile,
+            nested,
         } => {
             let config = Config::load_or_create().expect("Failed to load config");
             let Some(llm_provider_details) = config.llm_provider_details() else {
@@ -99,6 +104,7 @@ pub fn exec() {
                     run::run(
                         llm_provider_details,
                         &containerfile,
+                        nested,
                         &std::env::current_dir().expect("Failed to get current dir"),
                         task_description,
                     )

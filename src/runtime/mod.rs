@@ -14,6 +14,7 @@ use uuid::Uuid;
 pub struct ContainerConfig {
     pub image: String,
     pub env_vars: Vec<(String, String)>,
+    pub nested: bool,
 }
 
 /// Runtime that uses the local Docker daemon to run containers.
@@ -159,15 +160,17 @@ impl LocalDockerRuntime {
                 ..Default::default()
             };
 
-            // On Linux, prefer sysbox if available.
-            if !running_on_windows_or_mac_os() && sysbox_is_installed() {
-                config_host.runtime = Some("sysbox-runc".to_string());
-            } else {
-                // Fallback: bind-mount the host Docker socket.
-                // Note: On Linux, this essentially gives the container full control over the host which is a major security risk.
-                // On Windows and macOS, the risk is lower because Docker runs in a VM.
-                config_host.binds =
-                    Some(vec!["/var/run/docker.sock:/var/run/docker.sock".to_string()]);
+            if config.nested {
+                // On Linux, prefer sysbox if available.
+                if !running_on_windows_or_mac_os() && sysbox_is_installed() {
+                    config_host.runtime = Some("sysbox-runc".to_string());
+                } else {
+                    // Fallback: bind-mount the host Docker socket.
+                    // Note: On Linux, this essentially gives the container full control over the host which is a major security risk.
+                    // On Windows and macOS, the risk is lower because Docker runs in a VM.
+                    config_host.binds =
+                        Some(vec!["/var/run/docker.sock:/var/run/docker.sock".to_string()]);
+                }
             }
             config_host
         };
