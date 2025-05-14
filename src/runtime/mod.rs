@@ -155,8 +155,9 @@ impl LocalDockerRuntime {
             .collect();
 
         let host_config = {
+            let bridge_ip = self.bridge_network_ip().await?;
             let mut config_host = HostConfig {
-                extra_hosts: Some(vec!["host.docker.internal:host-gateway".to_string()]),
+                extra_hosts: Some(vec![format!("host.docker.internal:{bridge_ip}").to_string()]),
                 ..Default::default()
             };
 
