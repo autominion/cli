@@ -15,7 +15,7 @@ Run compatible agents from the command line.
   ```
 - To locally install the `minion` executable, run:
   ```console
-  cargo install
+  cargo install --path .
   ```
   The binary `minion` gets installed to `~/.cargo/bin/minion`; make sure that this directory is in your `$PATH`.
 - Login to one of the supported LLM providers:
