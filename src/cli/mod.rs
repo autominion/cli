@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand, ValueEnum};
 
 use crate::config::{Config, LLMProvider};
-use crate::{cohere, gemini, groq, openrouter};
+use crate::providers::{cohere, gemini, groq, openrouter};
 
 mod editor;
 mod run;

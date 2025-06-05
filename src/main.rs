@@ -1,11 +1,8 @@
 mod api;
 mod cli;
-mod cohere;
 mod config;
 mod context;
-mod gemini;
-mod groq;
-mod openrouter;
+mod providers;
 mod runtime;
 mod util;
 
