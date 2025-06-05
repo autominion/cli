@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::{
     api::TaskOutcome,
-    config::{LLMProviderDetails, LLMRouterTable},
+    config::LLMRouterTable,
     context::{self, Context},
     runtime::ContainerConfig,
 };

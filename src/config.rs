@@ -182,32 +182,4 @@ impl Config {
             providers,
         })
     }
-
-    pub fn llm_provider_details(&self) -> Option<LLMProviderDetails> {
-        match self.llm_provider {
-            Some(LLMProvider::OpenRouter) => {
-                self.openrouter_key.as_ref().map(|key| LLMProviderDetails {
-                    api_chat_completions_endpoint: OPENROUTER_CHAT_COMPLETIONS_URL.clone(),
-                    api_key: key.clone(),
-                })
-            }
-            Some(LLMProvider::Groq) => self.groq_key.as_ref().map(|key| LLMProviderDetails {
-                api_chat_completions_endpoint: GROQ_CHAT_COMPLETIONS_URL.clone(),
-                api_key: key.clone(),
-            }),
-            Some(LLMProvider::GoogleGemini) => {
-                self.google_gemini_key
-                    .as_ref()
-                    .map(|key| LLMProviderDetails {
-                        api_chat_completions_endpoint: GEMINI_CHAT_COMPLETIONS_URL.clone(),
-                        api_key: key.clone(),
-                    })
-            }
-            Some(LLMProvider::Cohere) => self.cohere_key.as_ref().map(|key| LLMProviderDetails {
-                api_chat_completions_endpoint: COHERE_CHAT_COMPLETIONS_URL.clone(),
-                api_key: key.clone(),
-            }),
-            None => None,
-        }
-    }
 }

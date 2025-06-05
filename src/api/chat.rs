@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use actix_web::{web, Error, HttpRequest, Scope};
 use serde_json::Value;
-use url::Url;
 
 use llm_proxy::{CompletionRequest, ForwardConfig, ProxyConfig};
 
@@ -33,9 +32,9 @@ impl ProxyConfig for TheProxyConfig {
         req: &CompletionRequest,
     ) -> Result<ForwardConfig, Error> {
         let Some(model) = req.model.as_ref() else {
-            return Err(Error::from(actix_web::error::ErrorBadRequest(
+            return Err(actix_web::error::ErrorBadRequest(
                 "Missing model in request",
-            )));
+            ));
         };
         let (model_name, details) = &ctx.llm_router_table.details_for_model(model);
 
