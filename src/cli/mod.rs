@@ -72,7 +72,7 @@ pub fn exec() {
             nested,
         } => {
             let config = Config::load_or_create().expect("Failed to load config");
-            let Some(llm_provider_details) = config.llm_provider_details() else {
+            let Some(llm_router_table) = config.llm_router_table() else {
                 eprintln!("You currently don't have a LLM API key configured.");
                 eprintln!("Run `minion login` to authenticate with a supported provider.");
                 eprintln!(
@@ -102,7 +102,7 @@ pub fn exec() {
                 .expect("Failed to create runtime")
                 .block_on(async {
                     run::run(
-                        llm_provider_details,
+                        llm_router_table,
                         &containerfile,
                         nested,
                         &std::env::current_dir().expect("Failed to get current dir"),

@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::{
     api::TaskOutcome,
-    config::LLMProviderDetails,
+    config::{LLMProviderDetails, LLMRouterTable},
     context::{self, Context},
     runtime::ContainerConfig,
 };
@@ -14,7 +14,7 @@ use crate::{
 const AGENT_CONTAINER_IMAGE: &str = "ghcr.io/autominion/default-minion:x86-64-latest";
 
 pub async fn run<P: AsRef<Path>>(
-    llm_provider_details: LLMProviderDetails,
+    llm_router_table: LLMRouterTable,
     containerfile: &Option<P>,
     nested: bool,
     path: &P,
@@ -39,7 +39,7 @@ pub async fn run<P: AsRef<Path>>(
     create_git_branch(path, &fork_branch)?;
 
     let ctx = Context {
-        llm_provider_details,
+        llm_router_table,
         agent_api_key: agent_api_key.clone(),
         task_description,
         git_user_name: "minion[bot]".to_owned(),

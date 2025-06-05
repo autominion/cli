@@ -1,6 +1,6 @@
 use core::fmt;
-use std::fs;
 use std::path::PathBuf;
+use std::{collections::HashMap, fs};
 
 use anyhow::anyhow;
 use once_cell::sync::Lazy;
@@ -49,6 +49,17 @@ pub enum LLMProvider {
     Cohere,
 }
 
+impl LLMProvider {
+    pub fn tag(&self) -> &'static str {
+        match self {
+            LLMProvider::OpenRouter => "openrouter",
+            LLMProvider::Groq => "groq",
+            LLMProvider::GoogleGemini => "google-gemini",
+            LLMProvider::Cohere => "cohere",
+        }
+    }
+}
+
 impl fmt::Display for LLMProvider {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -57,6 +68,31 @@ impl fmt::Display for LLMProvider {
             LLMProvider::GoogleGemini => write!(f, "Google Gemini"),
             LLMProvider::Cohere => write!(f, "Cohere"),
         }
+    }
+}
+
+pub struct LLMRouterTable {
+    pub default_provider: String,
+    pub providers: HashMap<String, LLMProviderDetails>,
+}
+
+impl LLMRouterTable {
+    pub fn details_for_model(&self, provider_and_model: &str) -> (String, &LLMProviderDetails) {
+        provider_and_model
+            .split_once('/')
+            .and_then(|(provider_name, model_name)| {
+                self.providers
+                    .get(provider_name)
+                    .map(|details| (model_name.to_owned(), details))
+            })
+            .unwrap_or_else(|| {
+                (
+                    provider_and_model.to_owned(),
+                    self.providers
+                        .get(&self.default_provider)
+                        .expect("Default provider not found"),
+                )
+            })
     }
 }
 
@@ -95,6 +131,56 @@ impl Config {
             .ok_or(anyhow!("Failed to locate appropriate config directory"))?
             .join("minion")
             .join("config.toml"))
+    }
+
+    pub fn llm_router_table(&self) -> Option<LLMRouterTable> {
+        let mut providers = HashMap::new();
+
+        if let Some(key) = &self.openrouter_key {
+            providers.insert(
+                "openrouter".to_string(),
+                LLMProviderDetails {
+                    api_chat_completions_endpoint: OPENROUTER_CHAT_COMPLETIONS_URL.clone(),
+                    api_key: key.clone(),
+                },
+            );
+        }
+        if let Some(key) = &self.groq_key {
+            providers.insert(
+                "groq".to_string(),
+                LLMProviderDetails {
+                    api_chat_completions_endpoint: GROQ_CHAT_COMPLETIONS_URL.clone(),
+                    api_key: key.clone(),
+                },
+            );
+        }
+        if let Some(key) = &self.google_gemini_key {
+            providers.insert(
+                "google-gemini".to_string(),
+                LLMProviderDetails {
+                    api_chat_completions_endpoint: GEMINI_CHAT_COMPLETIONS_URL.clone(),
+                    api_key: key.clone(),
+                },
+            );
+        }
+        if let Some(key) = &self.cohere_key {
+            providers.insert(
+                "cohere".to_string(),
+                LLMProviderDetails {
+                    api_chat_completions_endpoint: COHERE_CHAT_COMPLETIONS_URL.clone(),
+                    api_key: key.clone(),
+                },
+            );
+        }
+
+        let Some(default_llm_provider) = &self.llm_provider else {
+            return None;
+        };
+
+        Some(LLMRouterTable {
+            default_provider: default_llm_provider.tag().to_string(),
+            providers,
+        })
     }
 
     pub fn llm_provider_details(&self) -> Option<LLMProviderDetails> {

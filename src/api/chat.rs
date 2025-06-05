@@ -4,7 +4,7 @@ use actix_web::{web, Error, HttpRequest, Scope};
 use serde_json::Value;
 use url::Url;
 
-use llm_proxy::{CompletionRequest, ProxyConfig};
+use llm_proxy::{CompletionRequest, ForwardConfig, ProxyConfig};
 
 use crate::context::Context;
 
@@ -27,23 +27,23 @@ impl ProxyConfig for TheProxyConfig {
         Ok(ctx)
     }
 
-    async fn api_key(
+    async fn forward(
         &self,
         ctx: &Self::Context,
-        _req: &CompletionRequest,
-    ) -> Result<String, Error> {
-        Ok(ctx.llm_provider_details.api_key.clone())
-    }
+        req: &CompletionRequest,
+    ) -> Result<ForwardConfig, Error> {
+        let Some(model) = req.model.as_ref() else {
+            return Err(Error::from(actix_web::error::ErrorBadRequest(
+                "Missing model in request",
+            )));
+        };
+        let (model_name, details) = &ctx.llm_router_table.details_for_model(model);
 
-    async fn forward_to_url(
-        &self,
-        ctx: &Self::Context,
-        _req: &CompletionRequest,
-    ) -> Result<Url, Error> {
-        Ok(ctx
-            .llm_provider_details
-            .api_chat_completions_endpoint
-            .clone())
+        Ok(ForwardConfig {
+            api_key: details.api_key.clone(),
+            target_url: details.api_chat_completions_endpoint.clone(),
+            model: Some(model_name.clone()),
+        })
     }
 
     async fn inspect_interaction(
