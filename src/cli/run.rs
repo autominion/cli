@@ -1,7 +1,7 @@
+use anyhow::anyhow;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::Notify;
-use anyhow::anyhow;
 use url::Url;
 use uuid::Uuid;
 
@@ -59,7 +59,11 @@ pub async fn run<P: AsRef<Path>>(
     let stop_notify = Arc::new(Notify::new());
     let agent_base_url = host_address.clone();
 
-    let inquiry_handle = tokio::spawn(handle_inquiries(agent_base_url.clone(), agent_api_key.clone(), stop_notify.clone()));
+    let inquiry_handle = tokio::spawn(handle_inquiries(
+        agent_base_url.clone(),
+        agent_api_key.clone(),
+        stop_notify.clone(),
+    ));
     let container_config = ContainerConfig {
         image,
         env_vars: vec![
@@ -100,11 +104,9 @@ pub async fn run<P: AsRef<Path>>(
 }
 
 async fn handle_inquiries(agent_base_url: String, agent_api_key: String, stop_notify: Arc<Notify>) {
-
     let client = reqwest::Client::new();
 
     loop {
-
         // Check stop signal
         let stop_future = stop_notify.notified();
         let sleep_future = tokio::time::sleep(std::time::Duration::from_secs(1));
@@ -178,7 +180,7 @@ async fn handle_inquiries(agent_base_url: String, agent_api_key: String, stop_no
                                 Ok(r) => println!("[handle_inquiries] POST status: {}", r.status()),
                                 Err(e) => println!("[handle_inquiries] ERROR posting answer: {}", e),
                             }
-                        } 
+                        }
                     }
                     Err(e) => {
                         println!("[handle_inquiries] ERROR sending GET: {}", e);
@@ -189,8 +191,6 @@ async fn handle_inquiries(agent_base_url: String, agent_api_key: String, stop_no
     }
     println!("[handle_inquiries] Handler EXITED.");
 }
-
-
 
 /// Create a new git branch from the current HEAD.
 fn create_git_branch<P: AsRef<Path>>(path: P, branch_name: &str) -> anyhow::Result<()> {

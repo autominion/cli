@@ -1,9 +1,9 @@
 use std::net::TcpListener;
 
+use crate::api::agent::InquiryState;
 use actix_web::{middleware, web, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use tokio::sync::{oneshot, Mutex};
-use crate::api::agent::InquiryState;
 
 use crate::context::Context;
 

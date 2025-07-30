@@ -21,14 +21,13 @@ pub struct InquiryPayload {
     pub inquiry: String,
 }
 
-
 pub fn scope() -> Scope {
     Scope::new("/agent")
         .service(task_info)
         .service(task_complete)
         .service(task_fail)
         .service(inquiry)
-        .service(get_inquiry)           
+        .service(get_inquiry)
         .service(inquiry_response)
 }
 
@@ -104,15 +103,12 @@ pub async fn inquiry(
     }
 }
 
-
 /// This endpoint lets the CLI check if there is a pending inquiry from the agent.
 /// If there is a question it returns it as a string in the response body.
 /// If there is no question it returns an empty string.
-/// CLI is constantly checking 
+/// CLI is constantly checking
 #[get("/inquiry_request")]
-pub async fn get_inquiry(
-    inquiry_state: web::Data<InquiryState>,
-) -> HttpResponse {
+pub async fn get_inquiry(inquiry_state: web::Data<InquiryState>) -> HttpResponse {
     let guard = inquiry_state.pending.lock().await;
     if let Some(ref pending_inquiry) = *guard {
         HttpResponse::Ok().body(pending_inquiry.question.clone())
@@ -124,7 +120,7 @@ pub async fn get_inquiry(
 /// This endpoint lets the CLI provide an answer to the pending inquiry.
 /// It takes a string as input and delivers it to the waiting agent (via the stored oneshot sender).
 /// If there is no pending inquiry, it returns a BadRequest.
-/// Once there is an answer its send back 
+/// Once there is an answer its send back
 #[post("/inquiry_response")]
 pub async fn inquiry_response(
     answer: web::Json<String>,
@@ -141,6 +137,3 @@ pub async fn inquiry_response(
         HttpResponse::BadRequest().body("No pending inquiry")
     }
 }
-
-
-
