@@ -3,6 +3,7 @@ use std::net::TcpListener;
 use actix_web::{middleware, web, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use tokio::sync::{oneshot, Mutex};
+use crate::api::agent::InquiryState;
 
 use crate::context::Context;
 
@@ -22,6 +23,9 @@ pub async fn run_server(listener: TcpListener, ctx: Context) -> anyhow::Result<T
     let ctx = web::Data::new(ctx);
     let (shutdown_tx, shutdown_rx) = oneshot::channel::<TaskOutcome>();
     let shutdown_tx = web::Data::new(Mutex::new(Some(shutdown_tx)));
+    let inquiry_state = web::Data::new(InquiryState {
+        pending: Mutex::new(None),
+    });
 
     let server = HttpServer::new(move || {
         let bearer_auth = HttpAuthentication::bearer(auth::bearer_auth_validator);
@@ -29,6 +33,7 @@ pub async fn run_server(listener: TcpListener, ctx: Context) -> anyhow::Result<T
         App::new()
             .app_data(ctx.clone())
             .app_data(shutdown_tx.clone())
+            .app_data(inquiry_state.clone())
             .service(git_proxy::scope(
                 "/api/agent/git",
                 git::basic_auth_validator,
