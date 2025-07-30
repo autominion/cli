@@ -26,14 +26,13 @@ pub async fn run<P: AsRef<Path>>(
     let listener = crate::util::listen_to_free_port(&agent_api_host);
     let agent_api_port = listener.local_addr().unwrap().port();
     let git_repo_url = Url::parse(&format!(
-        "http://host.docker.internal:{}/api/agent/git",
-        agent_api_port
+        "http://host.docker.internal:{agent_api_port}/api/agent/git"
     ))
     .expect("Failed to parse URL");
-    let minion_api_base_url = format!("http://host.docker.internal:{}/api/", agent_api_port);
+    let minion_api_base_url = format!("http://host.docker.internal:{agent_api_port}/api/");
     let fork_branch = Uuid::now_v7().to_string();
     let agent_api_key = context::random_key();
-    let host_address = format!("http://{}:{}", agent_api_host, agent_api_port);
+    let host_address = format!("http://{agent_api_host}:{agent_api_port}");
 
     let base_branch = current_branch_name(path)?;
 
@@ -116,12 +115,12 @@ async fn handle_inquiries(agent_base_url: String, agent_api_key: String, stop_no
                 break;
             }
             _ = sleep_future => {
-                let url = format!("{}/api/agent/inquiry_request", agent_base_url);
+                let url = format!("{agent_base_url}/api/agent/inquiry_request");
                 let resp_result = client.get(&url).bearer_auth(&agent_api_key).send().await;
                 match resp_result {
                     Ok(resp) => {
                         let text = resp.text().await.unwrap_or_else(|e| {
-                            println!("[handle_inquiries] ERROR reading response text: {}", e);
+                            println!("[handle_inquiries] ERROR reading response text: {e}");
                             "".to_owned()
                         });
                         let question = text.trim().to_string();
@@ -131,7 +130,7 @@ async fn handle_inquiries(agent_base_url: String, agent_api_key: String, stop_no
                             let width = term_size::dimensions().map(|(w, _)| w).unwrap_or(80);
 
                             let banner = "🐋=== ORCA WANTS INPUT ===🐋";
-                            let question_banner = format!("🐋 ORCA is asking:");
+                            let question_banner = "🐋 ORCA is asking:".to_string();
                             let separator = "─".repeat(width);
 
                             // Helper to center text
@@ -140,11 +139,11 @@ async fn handle_inquiries(agent_base_url: String, agent_api_key: String, stop_no
                                 format!("{:pad$}{}", "", text, pad = pad)
                             }
 
-                            println!("\n\n{}", separator);
+                            println!("\n\n{separator}");
                             println!("{}", center(banner, width));
                             println!("{}", center(&question_banner, width));
                             println!("{}", center(&question, width));
-                            println!("{}", separator);
+                            println!("{separator}");
                             println!();
 
                             // Read Blocking
@@ -159,16 +158,16 @@ async fn handle_inquiries(agent_base_url: String, agent_api_key: String, stop_no
                                         input
                                     }
                                     Err(e) => {
-                                        println!("[handle_inquiries] ERROR reading stdin: {}", e);
+                                        println!("[handle_inquiries] ERROR reading stdin: {e}");
                                         String::new()
                                     }
                                 }
                             }).await.unwrap();
 
-                            println!(" User entered: {:?}", answer);
+                            println!(" User entered: {answer:?}");
 
-                            let post_url = format!("{}/api/agent/inquiry_response", agent_base_url);
-                            println!("[handle_inquiries] POSTing answer to: {}", post_url);
+                            let post_url = format!("{agent_base_url}/api/agent/inquiry_response");
+                            println!("[handle_inquiries] POSTing answer to: {post_url}");
                             let post_resp = client
                                 .post(&post_url)
                                 .bearer_auth(&agent_api_key)
@@ -178,12 +177,12 @@ async fn handle_inquiries(agent_base_url: String, agent_api_key: String, stop_no
 
                             match post_resp {
                                 Ok(r) => println!("[handle_inquiries] POST status: {}", r.status()),
-                                Err(e) => println!("[handle_inquiries] ERROR posting answer: {}", e),
+                                Err(e) => println!("[handle_inquiries] ERROR posting answer: {e}"),
                             }
                         }
                     }
                     Err(e) => {
-                        println!("[handle_inquiries] ERROR sending GET: {}", e);
+                        println!("[handle_inquiries] ERROR sending GET: {e}");
                     }
                 }
             }
@@ -230,7 +229,7 @@ fn squash_merge_branch<P: AsRef<Path>>(path: P, base: &str, fork: &str) -> anyho
         .shorthand()
         .ok_or_else(|| anyhow!("Cannot determine current branch name"))?;
     if head_name != base {
-        repo.set_head(&format!("refs/heads/{}", base))?;
+        repo.set_head(&format!("refs/heads/{base}"))?;
         repo.checkout_head(None)?;
     }
 

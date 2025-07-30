@@ -7,11 +7,10 @@ const COHERE_API_KEYS_URL: &str = "https://dashboard.cohere.ai/api-keys";
 pub async fn login_flow(mut config: Config) -> anyhow::Result<()> {
     println!("Opening Cohere API Keys page in your default web browser.");
     println!(
-        "If it doesn't open automatically, please visit: {}",
-        COHERE_API_KEYS_URL
+        "If it doesn't open automatically, please visit: {COHERE_API_KEYS_URL}"
     );
     if let Err(err) = webbrowser::open(COHERE_API_KEYS_URL) {
-        eprintln!("Failed to open browser: {}", err);
+        eprintln!("Failed to open browser: {err}");
     }
 
     print!("Please enter your Cohere API key: ");
