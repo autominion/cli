@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use std::io::{self, Write};
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::Notify;
@@ -148,7 +149,6 @@ async fn handle_inquiries(agent_base_url: String, agent_api_key: String, stop_no
 
                             // Read Blocking
                             let answer = tokio::task::spawn_blocking(|| {
-                                use std::io::{self, Write};
                                 print!("Your answer: ");
                                 io::stdout().flush().unwrap();
 
