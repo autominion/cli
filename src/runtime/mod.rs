@@ -123,7 +123,7 @@ impl LocalDockerRuntime {
 
         while let Some(build_result) = build_stream.try_next().await? {
             if let Some(output) = build_result.stream {
-                print!("{}", output);
+                print!("{output}");
             }
         }
 
@@ -151,7 +151,7 @@ impl LocalDockerRuntime {
         let env: Vec<String> = config
             .env_vars
             .into_iter()
-            .map(|(key, value)| format!("{}={}", key, value))
+            .map(|(key, value)| format!("{key}={value}"))
             .collect();
 
         let host_config = {
@@ -214,12 +214,12 @@ impl LocalDockerRuntime {
                 match log {
                     LogOutput::StdOut { message } => {
                         if let Ok(text) = String::from_utf8(message.to_vec()) {
-                            print!("{}", text);
+                            print!("{text}");
                         }
                     }
                     LogOutput::StdErr { message } => {
                         if let Ok(text) = String::from_utf8(message.to_vec()) {
-                            eprint!("{}", text);
+                            eprint!("{text}");
                         }
                     }
                     _ => {}

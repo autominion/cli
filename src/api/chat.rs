@@ -53,6 +53,6 @@ impl ProxyConfig for TheProxyConfig {
     ) {
         // For now we just log raw request and response
         // Later we will need to come up with a proper feedback mechanism
-        println!("Request: {:?}\n\nResponse: {:?}", request, response);
+        println!("Request: {request:?}\n\nResponse: {response:?}");
     }
 }

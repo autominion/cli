@@ -6,12 +6,12 @@ const AISTUDIO_API_KEYS_URL: &str = "https://aistudio.google.com/app/apikey";
 
 pub async fn login_flow(mut config: Config) -> anyhow::Result<()> {
     println!("Google AI Studio should open in your default web browser.");
-    println!("If it doesn't, please visit: {}", AISTUDIO_API_KEYS_URL);
+    println!("If it doesn't, please visit: {AISTUDIO_API_KEYS_URL}");
     println!("You may need to create a Google Cloud project first.");
     println!("You can do so at: https://console.cloud.google.com");
 
     if let Err(err) = webbrowser::open(AISTUDIO_API_KEYS_URL) {
-        eprintln!("Failed to open browser: {}", err);
+        eprintln!("Failed to open browser: {err}");
     }
 
     print!("Please enter your Gemini API key: ");

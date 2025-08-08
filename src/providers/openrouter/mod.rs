@@ -31,8 +31,8 @@ pub struct Context {
 pub async fn login_flow(config: Config) -> anyhow::Result<()> {
     let host = "127.0.0.1";
     let port = 3000;
-    let bind_addr = format!("{}:{}", host, port);
-    let web_base_url = Url::parse(&format!("http://{}", bind_addr)).unwrap();
+    let bind_addr = format!("{host}:{port}");
+    let web_base_url = Url::parse(&format!("http://{bind_addr}")).unwrap();
 
     println!("The login page should open in your default web browser.");
     println!(
@@ -70,7 +70,7 @@ pub async fn login_flow(config: Config) -> anyhow::Result<()> {
     tokio::spawn(async move {
         tokio::time::sleep(Duration::from_millis(500)).await;
         if let Err(err) = webbrowser::open(login_url.as_str()) {
-            eprintln!("Failed to open browser: {}", err);
+            eprintln!("Failed to open browser: {err}");
         }
     });
 
@@ -124,7 +124,7 @@ async fn openrouter_auth_code(
         Ok(key) => key,
         Err(err) => {
             return HttpResponse::InternalServerError()
-                .body(format!("Failed to get auth key: {}", err));
+                .body(format!("Failed to get auth key: {err}"));
         }
     };
 
@@ -136,7 +136,7 @@ async fn openrouter_auth_code(
         config.llm_provider = Some(crate::config::LLMProvider::OpenRouter);
     }
     if let Err(err) = config.save() {
-        return HttpResponse::InternalServerError().body(format!("Failed to save config: {}", err));
+        return HttpResponse::InternalServerError().body(format!("Failed to save config: {err}"));
     }
 
     println!();

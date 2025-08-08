@@ -6,10 +6,10 @@ const GROQ_API_KEYS_URL: &str = "https://console.groq.com/keys";
 
 pub async fn login_flow(mut config: Config) -> anyhow::Result<()> {
     println!("The Groq console should open in your default web browser.");
-    println!("If it doesn't, please visit: {}", GROQ_API_KEYS_URL);
+    println!("If it doesn't, please visit: {GROQ_API_KEYS_URL}");
 
     if let Err(err) = webbrowser::open(GROQ_API_KEYS_URL) {
-        eprintln!("Failed to open browser: {}", err);
+        eprintln!("Failed to open browser: {err}");
     }
 
     print!("Please enter your Groq API key: ");

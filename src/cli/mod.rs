@@ -93,7 +93,7 @@ pub fn exec() {
                 read_task_from_editor()
             };
 
-            println!("{}", task_description);
+            println!("{task_description}");
             println!();
 
             println!("Working on the task.");
@@ -144,7 +144,7 @@ fn read_task_from_editor() -> String {
     let edited = editor::Editor::new()
         .edit(initial_message)
         .unwrap_or_else(|err| {
-            eprintln!("Failed to open editor: {}", err);
+            eprintln!("Failed to open editor: {err}");
             std::process::exit(1);
         });
 
