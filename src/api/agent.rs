@@ -83,7 +83,8 @@ pub async fn task_fail(
 
     HttpResponse::Ok().finish()
 }
-/// This enpoint is waiting for the tool to provide a string
+/// Send an inquiry to the user and await its answer.
+/// Agents use this endpoint to request clarification on their tasks.
 #[post("/inquiry")]
 pub async fn inquiry(
     request: web::Json<InquiryPayload>,
