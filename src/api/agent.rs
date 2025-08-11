@@ -80,7 +80,7 @@ pub async fn task_fail(
 pub async fn inquiry(request: web::Json<InquiryPayload>) -> HttpResponse {
     let question = request.inquiry.clone();
 
-    println!("Agent is asking: {}", question);
+    println!("Agent is asking: {question}");
 
     let answer = match tokio::task::spawn_blocking(move || {
         print!("Your answer: ");
