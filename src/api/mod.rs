@@ -4,7 +4,6 @@ use actix_web::{middleware, web, App, HttpServer};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use tokio::sync::{oneshot, Mutex};
 
-
 use crate::context::Context;
 
 mod agent;

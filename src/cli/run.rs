@@ -53,7 +53,7 @@ pub async fn run<P: AsRef<Path>>(
         rt.pull_container_image(AGENT_CONTAINER_IMAGE).await?;
         AGENT_CONTAINER_IMAGE.to_owned()
     };
-    
+
     let container_config = ContainerConfig {
         image,
         env_vars: vec![
@@ -67,10 +67,18 @@ pub async fn run<P: AsRef<Path>>(
     // Wait for the server to be ready by polling the /ready endpoint
     crate::api::wait_until_ready(&host_address).await?;
 
-    
     let (task_outcome, _) = tokio::try_join!(
-        async { server.await.map_err(|e| anyhow!(e))?.map_err(|e| anyhow!(e)) },
-        async { rt.run_container(container_config).await.map_err(|e| anyhow!(e)) }
+        async {
+            server
+                .await
+                .map_err(|e| anyhow!(e))?
+                .map_err(|e| anyhow!(e))
+        },
+        async {
+            rt.run_container(container_config)
+                .await
+                .map_err(|e| anyhow!(e))
+        }
     )?;
 
     if task_outcome == TaskOutcome::Failure {
@@ -80,7 +88,6 @@ pub async fn run<P: AsRef<Path>>(
     squash_merge_branch(path, &base_branch, &fork_branch)?;
     Ok(())
 }
-
 
 /// Create a new git branch from the current HEAD.
 fn create_git_branch<P: AsRef<Path>>(path: P, branch_name: &str) -> anyhow::Result<()> {

@@ -1,7 +1,7 @@
-use std::io::{self, Write};
 use actix_web::Scope;
 use actix_web::{get, post, web, HttpResponse};
 use serde::Deserialize;
+use std::io::{self, Write};
 use tokio::sync::{oneshot, Mutex};
 
 use agent_api::types::task::*;
@@ -83,7 +83,6 @@ pub async fn inquiry(request: web::Json<InquiryPayload>) -> HttpResponse {
     println!("Agent is asking: {}", question);
 
     let answer = match tokio::task::spawn_blocking(move || {
-        
         print!("Your answer: ");
         io::stdout().flush().ok();
 
@@ -93,14 +92,12 @@ pub async fn inquiry(request: web::Json<InquiryPayload>) -> HttpResponse {
         } else {
             String::new()
         }
-    }).await {
+    })
+    .await
+    {
         Ok(s) => s,
         Err(_) => String::new(),
     };
 
     HttpResponse::Ok().json(answer)
 }
-
-
-
-
