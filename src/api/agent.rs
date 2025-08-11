@@ -82,18 +82,19 @@ pub async fn inquiry(request: web::Json<InquiryPayload>) -> HttpResponse {
 
     println!("Agent is asking: {question}");
 
-     let answer = (tokio::task::spawn_blocking(move || {
+    let answer = (tokio::task::spawn_blocking(move || {
         print!("Your answer: ");
         io::stdout().flush().ok();
 
         let mut input = String::new();
-         if io::stdin().read_line(&mut input).is_ok() {
+        if io::stdin().read_line(&mut input).is_ok() {
             input.trim().to_string()
         } else {
             String::new()
         }
-   })
-     .await).unwrap_or_default();
+    })
+    .await)
+        .unwrap_or_default();
 
     HttpResponse::Ok().json(answer)
 }
