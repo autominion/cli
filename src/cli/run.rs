@@ -1,6 +1,5 @@
-use std::path::Path;
-
 use anyhow::anyhow;
+use std::path::Path;
 use url::Url;
 use uuid::Uuid;
 
@@ -25,14 +24,13 @@ pub async fn run<P: AsRef<Path>>(
     let listener = crate::util::listen_to_free_port(&agent_api_host);
     let agent_api_port = listener.local_addr().unwrap().port();
     let git_repo_url = Url::parse(&format!(
-        "http://host.docker.internal:{}/api/agent/git",
-        agent_api_port
+        "http://host.docker.internal:{agent_api_port}/api/agent/git"
     ))
     .expect("Failed to parse URL");
-    let minion_api_base_url = format!("http://host.docker.internal:{}/api/", agent_api_port);
+    let minion_api_base_url = format!("http://host.docker.internal:{agent_api_port}/api/");
     let fork_branch = Uuid::now_v7().to_string();
     let agent_api_key = context::random_key();
-    let host_address = format!("http://{}:{}", agent_api_host, agent_api_port);
+    let host_address = format!("http://{agent_api_host}:{agent_api_port}");
 
     let base_branch = current_branch_name(path)?;
 
@@ -66,7 +64,6 @@ pub async fn run<P: AsRef<Path>>(
     };
 
     let server = tokio::spawn(crate::api::run_server(listener, ctx));
-
     // Wait for the server to be ready by polling the /ready endpoint
     crate::api::wait_until_ready(&host_address).await?;
 
@@ -89,7 +86,6 @@ pub async fn run<P: AsRef<Path>>(
     }
 
     squash_merge_branch(path, &base_branch, &fork_branch)?;
-
     Ok(())
 }
 
@@ -131,7 +127,7 @@ fn squash_merge_branch<P: AsRef<Path>>(path: P, base: &str, fork: &str) -> anyho
         .shorthand()
         .ok_or_else(|| anyhow!("Cannot determine current branch name"))?;
     if head_name != base {
-        repo.set_head(&format!("refs/heads/{}", base))?;
+        repo.set_head(&format!("refs/heads/{base}"))?;
         repo.checkout_head(None)?;
     }
 

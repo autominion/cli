@@ -1,5 +1,8 @@
+use std::io::{self, Write};
+
 use actix_web::Scope;
 use actix_web::{get, post, web, HttpResponse};
+use serde::Deserialize;
 use tokio::sync::{oneshot, Mutex};
 
 use agent_api::types::task::*;
@@ -7,11 +10,17 @@ use agent_api::types::task::*;
 use crate::api::TaskOutcome;
 use crate::context::Context;
 
+#[derive(Deserialize)]
+pub struct InquiryPayload {
+    pub inquiry: String,
+}
+
 pub fn scope() -> Scope {
     Scope::new("/agent")
         .service(task_info)
         .service(task_complete)
         .service(task_fail)
+        .service(inquiry)
 }
 
 #[get("/task")]
@@ -65,4 +74,28 @@ pub async fn task_fail(
         .expect("Failed to send shutdown signal");
 
     HttpResponse::Ok().finish()
+}
+/// Send an inquiry to the user and await its answer.
+/// Agents use this endpoint to request clarification on their tasks.
+#[post("/inquiry")]
+pub async fn inquiry(request: web::Json<InquiryPayload>) -> HttpResponse {
+    let question = request.inquiry.clone();
+
+    println!("Agent is asking: {question}");
+
+    let answer = (tokio::task::spawn_blocking(move || {
+        print!("Your answer: ");
+        io::stdout().flush().ok();
+
+        let mut input = String::new();
+        if io::stdin().read_line(&mut input).is_ok() {
+            input.trim().to_string()
+        } else {
+            String::new()
+        }
+    })
+    .await)
+        .unwrap_or_default();
+
+    HttpResponse::Ok().json(answer)
 }
