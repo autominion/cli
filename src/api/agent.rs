@@ -1,7 +1,8 @@
+use std::io::{self, Write};
+
 use actix_web::Scope;
 use actix_web::{get, post, web, HttpResponse};
 use serde::Deserialize;
-use std::io::{self, Write};
 use tokio::sync::{oneshot, Mutex};
 
 use agent_api::types::task::*;
