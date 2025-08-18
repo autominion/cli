@@ -67,7 +67,7 @@ pub async fn run<P: AsRef<Path>>(
     // Wait for the server to be ready by polling the /ready endpoint
     crate::api::wait_until_ready(&host_address).await?;
 
-    let (task_outcome, _) = tokio::try_join!(
+    let (task_outcome, container_id) = tokio::try_join!(
         async {
             server
                 .await
@@ -80,6 +80,11 @@ pub async fn run<P: AsRef<Path>>(
                 .map_err(|e| anyhow!(e))
         }
     )?;
+
+    // Delete the container after its usage
+    if let Some(container_id) = container_id {
+        rt.delete_container(container_id).await?;
+    }
 
     if task_outcome == TaskOutcome::Failure {
         return Ok(());
