@@ -81,7 +81,6 @@ pub async fn run<P: AsRef<Path>>(
         }
     )?;
 
-    // Delete the container after its usage
     rt.delete_container(container_id.to_string()).await?;
 
     if task_outcome == TaskOutcome::Failure {
