@@ -147,7 +147,7 @@ impl LocalDockerRuntime {
     }
 
     /// Run a container with the given configuration.
-    pub async fn run_container(&self, config: ContainerConfig) -> anyhow::Result<()> {
+    pub async fn run_container(&self, config: ContainerConfig) -> anyhow::Result<String> {
         let env: Vec<String> = config
             .env_vars
             .into_iter()
@@ -244,6 +244,12 @@ impl LocalDockerRuntime {
 
         let _ = output_forwarder.await;
 
+        Ok(container.id)
+    }
+
+    /// Delete a container by its ID.
+    pub async fn delete_container(&self, container_id: String) -> anyhow::Result<()> {
+        self.docker.remove_container(&container_id, None).await?;
         Ok(())
     }
 }
