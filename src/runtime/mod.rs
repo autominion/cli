@@ -244,7 +244,6 @@ impl LocalDockerRuntime {
 
         let _ = output_forwarder.await;
 
-        // Return the container ID
         Ok(container.id)
     }
 
