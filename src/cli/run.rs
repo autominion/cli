@@ -48,10 +48,8 @@ pub async fn run<P: AsRef<Path>>(
     };
 
     let image = if let Some(containerfile) = containerfile {
-        print!("build container image");
         rt.build_container_image(containerfile).await?
     } else {
-        print!("pull container image");
         rt.pull_container_image(AGENT_CONTAINER_IMAGE).await?;
         AGENT_CONTAINER_IMAGE.to_owned()
     };
