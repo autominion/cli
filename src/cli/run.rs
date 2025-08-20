@@ -48,14 +48,16 @@ pub async fn run<P: AsRef<Path>>(
     };
 
     let image = if let Some(containerfile) = containerfile {
+        print!("build container image");
         rt.build_container_image(containerfile).await?
     } else {
+        print!("pull container image");
         rt.pull_container_image(AGENT_CONTAINER_IMAGE).await?;
         AGENT_CONTAINER_IMAGE.to_owned()
     };
 
     let container_config = ContainerConfig {
-        image,
+        image: image.clone(),
         env_vars: vec![
             ("MINION_API_BASE_URL".to_owned(), minion_api_base_url),
             ("MINION_API_TOKEN".to_owned(), agent_api_key),
@@ -82,6 +84,8 @@ pub async fn run<P: AsRef<Path>>(
     )?;
 
     rt.delete_container(container_id.to_string()).await?;
+    // Delete the image
+    rt.delete_image(image).await?;
 
     if task_outcome == TaskOutcome::Failure {
         return Ok(());
